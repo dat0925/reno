@@ -187,6 +187,43 @@ body{background:#0c0c0c;font-family:'DM Sans','Hiragino Sans',sans-serif;color:#
 }
 .sim-confirm:hover{opacity:0.88;}
 
+/* ── Material Info Card ── */
+.mat-card{
+  margin-top:10px;background:#111;border:1px solid #222;
+  border-radius:10px;overflow:hidden;
+}
+.mat-header{
+  padding:12px 14px 10px;border-bottom:1px solid #1a1a1a;
+  display:flex;align-items:center;gap:10px;
+}
+.mat-icon{
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.mat-name{font-size:14px;color:#ede9e3;font-weight:500;letter-spacing:0.02em;}
+.mat-category{font-size:10px;color:#686868;letter-spacing:0.12em;text-transform:uppercase;margin-top:2px;}
+.mat-ratings{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #1a1a1a;}
+.mat-rating{padding:10px 14px;border-right:1px solid #1a1a1a;}
+.mat-rating:nth-child(even){border-right:none;}
+.mat-rating-label{font-size:10px;color:#686868;letter-spacing:0.08em;margin-bottom:4px;}
+.mat-stars{display:flex;gap:2px;}
+.mat-star{width:10px;height:10px;border-radius:50%;}
+.mat-star.on{background:#c8a96e;}
+.mat-star.off{background:#222;}
+.mat-body{padding:12px 14px;}
+.mat-row{margin-bottom:10px;}
+.mat-row-label{font-size:10px;color:#7a6a50;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px;}
+.mat-pros{display:flex;flex-direction:column;gap:3px;}
+.mat-pro{font-size:12px;color:#7ab87a;display:flex;align-items:flex-start;gap:5px;line-height:1.5;}
+.mat-con{font-size:12px;color:#c07070;display:flex;align-items:flex-start;gap:5px;line-height:1.5;}
+.mat-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.mat-badge{
+  background:#1a1a1a;border:1px solid #222;border-radius:5px;
+  padding:4px 10px;font-size:11px;color:#888;letter-spacing:0.04em;
+}
+.mat-badge span{color:#c8a96e;}
+
 /* ── Day / Night toggle ── */
 .daynight-wrap{margin-top:10px;}
 .daynight-tabs{
@@ -344,7 +381,9 @@ const SYSTEM_PROMPT = `あなたはRENO.aiのAIリフォームコンサルタン
 - 例（画像生成後）: [SUGGESTIONS: 別の箇所も試す, スタイルを変えてみる, 概算を見る, 提案書を作成]
 - 例（予算の話が出たとき）: [SUGGESTIONS: 概算を見る, 50万円以下, 50〜100万円, 100〜200万円, 200万円以上]
 - ユーザーが「概算を見る」「費用を知りたい」「いくらかかる」と言ったら [SHOW_SIMULATOR] を単独で出力する
-- [GENERATE_IMAGE:...] または [SHOW_SIMULATOR] がある場合は [SUGGESTIONS:...] は不要
+- ユーザーが特定の素材（床材・壁紙・タイルなど）について「詳しく知りたい」「耐久性は？」「お手入れは？」と聞いたら [SHOW_MATERIAL: 素材キー] を出力する
+  素材キーの一覧: oak（オーク無垢材）, composite（複合フローリング）, tile（磁器タイル）, cushion（クッションフロア）, plaster（漆喰）, vinyl（ビニールクロス）, concrete（コンクリート）, marble（大理石調）, tatami（畳）
+- [GENERATE_IMAGE:...] または [SHOW_SIMULATOR] または [SHOW_MATERIAL:...] がある場合は [SUGGESTIONS:...] は不要
 
 ## 画像プロンプトのルール
 - 英語で記述する
@@ -623,6 +662,149 @@ async function shareNative(src) {
   } catch(e) {
     if (e.name !== 'AbortError') alert('共有できませんでした: ' + e.message);
   }
+}
+
+// ── Material Database ──
+const MATERIALS = {
+  oak: {
+    name:'オーク無垢材', category:'床材', icon:'🪵', bg:'#1a1510',
+    durability:4, maintenance:2, water:2,
+    cost:'8,000〜20,000円/㎡', life:'30〜50年',
+    water_label:'低め',
+    pros:['温かみのある自然な風合い','年月とともに味が出る','断熱・保温効果が高い','研磨で傷を補修できる'],
+    cons:['水・湿気に弱い','傷がつきやすい','季節で膨張・収縮する','定期的なメンテナンスが必要'],
+  },
+  composite: {
+    name:'複合フローリング', category:'床材', icon:'🏗️', bg:'#141418',
+    durability:3, maintenance:4, water:3,
+    cost:'3,000〜10,000円/㎡', life:'15〜30年',
+    water_label:'普通',
+    pros:['コストパフォーマンスが高い','反りや収縮が少ない','種類・デザインが豊富','施工しやすい'],
+    cons:['傷の補修が難しい','無垢材より質感が劣る','耐用年数が短め','シート剥がれの可能性'],
+  },
+  tile: {
+    name:'磁器タイル', category:'床材・壁材', icon:'🔷', bg:'#141520',
+    durability:5, maintenance:5, water:5,
+    cost:'5,000〜15,000円/㎡', life:'50年以上',
+    water_label:'非常に高い',
+    pros:['耐水性・耐久性が非常に高い','お手入れが簡単','衛生的','デザインが豊富'],
+    cons:['冬場に冷たく感じる','硬いため転倒時に危険','目地に汚れがたまりやすい','施工コストが高め'],
+  },
+  cushion: {
+    name:'クッションフロア', category:'床材', icon:'🟫', bg:'#181510',
+    durability:2, maintenance:5, water:5,
+    cost:'1,500〜4,000円/㎡', life:'10〜15年',
+    water_label:'非常に高い',
+    pros:['低コスト','防水性が高い','足に優しい','DIYしやすい'],
+    cons:['安っぽく見えやすい','傷みやすく耐用年数が短い','熱に弱い','重家具で凹みが残る'],
+  },
+  plaster: {
+    name:'漆喰', category:'壁材', icon:'⬜', bg:'#181818',
+    durability:4, maintenance:3, water:2,
+    cost:'3,000〜8,000円/㎡', life:'30〜50年',
+    water_label:'低め',
+    pros:['調湿・消臭効果が高い','自然素材で健康に優しい','高級感がある','防火性が高い'],
+    cons:['施工コストが高い','ひび割れしやすい','汚れが落ちにくい','湿気の多い場所は不向き'],
+  },
+  vinyl: {
+    name:'ビニールクロス', category:'壁材', icon:'📄', bg:'#151515',
+    durability:2, maintenance:4, water:3,
+    cost:'1,000〜2,500円/㎡', life:'10〜15年',
+    water_label:'普通',
+    pros:['最もリーズナブル','種類・デザインが豊富','施工が早い','汚れが拭き取りやすい'],
+    cons:['質感がプラスチック的','耐用年数が短い','結露でカビが生えやすい','調湿効果がない'],
+  },
+  concrete: {
+    name:'コンクリート打ちっぱなし', category:'壁材', icon:'🧱', bg:'#141414',
+    durability:5, maintenance:3, water:3,
+    cost:'5,000〜12,000円/㎡', life:'50年以上',
+    water_label:'普通',
+    pros:['独特のクールな質感','耐久性が非常に高い','個性的な空間に','メンテナンス頻度が少ない'],
+    cons:['冬場に寒く感じやすい','結露しやすい','DIYでの補修が難しい','コストが高め'],
+  },
+  marble: {
+    name:'大理石調タイル', category:'床材・壁材', icon:'✨', bg:'#181818',
+    durability:4, maintenance:4, water:5,
+    cost:'6,000〜20,000円/㎡', life:'30年以上',
+    water_label:'非常に高い',
+    pros:['高級感が出る','耐水性が高い','本物より低コスト','お手入れしやすい'],
+    cons:['本物の大理石より質感が劣る','冷たさがある','滑りやすい種類も','接着が弱いと剥がれる'],
+  },
+  tatami: {
+    name:'畳', category:'床材', icon:'🟩', bg:'#121a12',
+    durability:2, maintenance:2, water:1,
+    cost:'5,000〜30,000円/畳', life:'10〜20年（表替え5年）',
+    water_label:'非常に低い',
+    pros:['クッション性・保温性が高い','和の落ち着いた雰囲気','断熱効果がある','香りがリラックスを誘う'],
+    cons:['水・湿気に非常に弱い','ダニ・カビが発生しやすい','定期的な表替えが必要','家具の跡がつきやすい'],
+  },
+};
+
+function stars(n, max=5) {
+  return Array.from({length:max}, (_,i) =>
+    `<div class="mat-star ${i<n?'on':'off'}"></div>`
+  ).join('');
+}
+
+function showMaterial(key) {
+  const m = MATERIALS[key];
+  if (!m) { addAgentMessage('素材情報が見つかりませんでした。'); return; }
+
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg agent';
+
+  div.innerHTML = `<div class="avatar agent">${agentIcon}</div>
+    <div class="bubble agent">
+      <div class="mat-card">
+        <div class="mat-header" style="background:${m.bg}">
+          <div class="mat-icon" style="background:${m.bg}">${m.icon}</div>
+          <div>
+            <div class="mat-name">${m.name}</div>
+            <div class="mat-category">${m.category}</div>
+          </div>
+        </div>
+        <div class="mat-ratings">
+          <div class="mat-rating">
+            <div class="mat-rating-label">耐久性</div>
+            <div class="mat-stars">${stars(m.durability)}</div>
+          </div>
+          <div class="mat-rating">
+            <div class="mat-rating-label">お手入れのしやすさ</div>
+            <div class="mat-stars">${stars(m.maintenance)}</div>
+          </div>
+          <div class="mat-rating" style="border-top:1px solid #1a1a1a">
+            <div class="mat-rating-label">耐水性</div>
+            <div class="mat-stars">${stars(m.water)}</div>
+          </div>
+          <div class="mat-rating" style="border-top:1px solid #1a1a1a;border-right:none">
+            <div class="mat-rating-label">水まわり適性</div>
+            <div style="font-size:12px;color:#888;margin-top:3px;">${m.water_label}</div>
+          </div>
+        </div>
+        <div class="mat-body">
+          <div class="mat-row">
+            <div class="mat-row-label">メリット</div>
+            <div class="mat-pros">
+              ${m.pros.map(p=>`<div class="mat-pro"><span>✓</span>${p}</div>`).join('')}
+            </div>
+          </div>
+          <div class="mat-row">
+            <div class="mat-row-label">注意点</div>
+            <div class="mat-pros">
+              ${m.cons.map(c=>`<div class="mat-con"><span>!</span>${c}</div>`).join('')}
+            </div>
+          </div>
+          <div class="mat-meta">
+            <div class="mat-badge">費用目安 <span>${m.cost}</span></div>
+            <div class="mat-badge">耐用年数 <span>${m.life}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  chat.appendChild(div);
+  renderSuggestions(['画像で確認する', '概算を見る', '別の素材を見る', '提案書を作成']);
+  scrollBottom();
 }
 
 // ── Day / Night Preview ──
@@ -1080,15 +1262,16 @@ async function callAgent() {
     // Parse tags
     const genMatch  = raw.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
     const simMatch  = raw.match(/\[SHOW_SIMULATOR\]/);
+    const matMatch  = raw.match(/\[SHOW_MATERIAL:\s*(\w+)\]/);
     const sugMatch  = raw.match(/\[SUGGESTIONS:\s*(.+?)\]/);
     const suggestions = sugMatch
       ? sugMatch[1].split(',').map(s => s.trim()).filter(Boolean)
       : null;
 
-    // Clean display text
     let display = raw
       .replace(/\[GENERATE_IMAGE:[\s\S]+?\]/, '')
       .replace(/\[SHOW_SIMULATOR\]/, '')
+      .replace(/\[SHOW_MATERIAL:\s*\w+\]/, '')
       .replace(/\[SUGGESTIONS:.+?\]/, '')
       .trim();
 
@@ -1100,6 +1283,10 @@ async function callAgent() {
       if (display) addAgentMessage(display);
       history.push({ role:'assistant', content: raw });
       showSimulator();
+    } else if (matMatch) {
+      if (display) addAgentMessage(display);
+      history.push({ role:'assistant', content: raw });
+      showMaterial(matMatch[1].trim());
     } else {
       addAgentMessage(display, null, null, suggestions);
       history.push({ role:'assistant', content: raw });
