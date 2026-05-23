@@ -97,6 +97,24 @@ body{background:#0c0c0c;font-family:'DM Sans','Hiragino Sans',sans-serif;color:#
 .typing span:nth-child(3){animation-delay:0.4s;}
 @keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
 
+/* ── Share bar ── */
+.share-bar{
+  display:flex;gap:7px;margin-top:10px;flex-wrap:wrap;
+}
+.share-btn{
+  display:flex;align-items:center;gap:6px;
+  border:none;border-radius:7px;padding:8px 14px;
+  font-size:12px;font-family:inherit;cursor:pointer;
+  letter-spacing:0.03em;transition:all 0.15s;font-weight:500;
+}
+.share-btn:active{transform:scale(0.97);}
+.share-btn.line{background:#06c755;color:#fff;}
+.share-btn.line:hover{background:#05b34d;}
+.share-btn.copy{background:#1e1e1e;border:1px solid #2a2a2a;color:#c8a96e;}
+.share-btn.copy:hover{border-color:#6a5030;}
+.share-btn.dl{background:#1e1e1e;border:1px solid #2a2a2a;color:#888;}
+.share-btn.dl:hover{color:#bbb;}
+
 /* ── Suggestion chips ── */
 .suggestions{
   display:flex;flex-wrap:wrap;gap:7px;
@@ -341,6 +359,20 @@ function addAgentMessage(text, afterSrc = null, beforeSrc = null, suggestions = 
       <div class="ci"><span class="ci-tag before">Before</span><img src="${beforeSrc}" alt="before"></div>
       <div class="ci"><span class="ci-tag after">After</span><img src="${afterSrc}" alt="after"></div>
     </div>`;
+    inner += `<div class="share-bar">
+      <button class="share-btn line" onclick="shareViaLine('${afterSrc}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+        LINEで送る
+      </button>
+      <button class="share-btn copy" onclick="shareNative('${afterSrc}')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        共有
+      </button>
+      <a class="share-btn dl" href="${afterSrc}" download="reno-ai.png">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        保存
+      </a>
+    </div>`;
   }
   inner += '</div>';
   div.innerHTML = inner;
@@ -424,6 +456,54 @@ async function handlePhoto(event, prompt) {
   } catch(e) {
     removeTyping();
     addAgentMessage(`申し訳ありません、エラーが発生しました。\n${e.message}`);
+  }
+}
+
+// ── Share functions ──
+async function srcToBlob(src) {
+  if (src.startsWith('data:')) {
+    const res = await fetch(src);
+    return await res.blob();
+  }
+  const res = await fetch(src);
+  return await res.blob();
+}
+
+async function shareViaLine(src) {
+  try {
+    const blob = await srcToBlob(src);
+    const file = new File([blob], 'reno-ai.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: 'RENO.ai リフォームイメージ',
+        text: 'AIが生成したリフォーム後のイメージです✨',
+        files: [file],
+      });
+    } else {
+      // fallback: LINE URL scheme with text only
+      const url = encodeURIComponent('AIが生成したリフォームイメージをRENO.aiで確認しました！');
+      window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(location.href)}&text=${url}`, '_blank');
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') alert('共有できませんでした: ' + e.message);
+  }
+}
+
+async function shareNative(src) {
+  try {
+    const blob = await srcToBlob(src);
+    const file = new File([blob], 'reno-ai.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: 'RENO.ai リフォームイメージ',
+        text: 'AIが生成したリフォーム後のイメージです✨',
+        files: [file],
+      });
+    } else {
+      alert('お使いのブラウザでは共有できません。「保存」からダウンロードしてください。');
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') alert('共有できませんでした: ' + e.message);
   }
 }
 
