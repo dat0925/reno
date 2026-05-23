@@ -348,6 +348,29 @@ body{background:var(--bg);font-family:'DM Sans','Hiragino Sans',sans-serif;color
 .dn-label{position:absolute;bottom:8px;right:8px;background:rgba(255,255,255,0.88);font-size:10px;padding:3px 8px;border-radius:4px;letter-spacing:0.1em;backdrop-filter:blur(4px);}
 .dn-generating{display:flex;align-items:center;justify-content:center;height:160px;background:var(--bg);border-radius:8px;color:var(--muted);font-size:12px;gap:10px;}
 
+/* ── Quick Form card ── */
+.quick-form{margin-top:10px;background:var(--bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.qf-section{padding:12px 14px;border-bottom:1px solid var(--border);}
+.qf-section:last-of-type{border-bottom:none;}
+.qf-label{font-size:10px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;}
+.qf-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.qf-chip{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:20px;padding:6px 13px;font-size:12.5px;
+  color:var(--text2);cursor:pointer;font-family:inherit;
+  transition:all 0.12s;white-space:nowrap;
+}
+.qf-chip:hover{border-color:var(--gold);color:var(--gold);}
+.qf-chip.selected{background:var(--gold-bg);border-color:var(--gold);color:var(--gold);font-weight:500;}
+.qf-submit{
+  width:100%;padding:12px;background:var(--text);color:var(--white);
+  border:none;font-size:13px;font-weight:500;cursor:pointer;
+  font-family:inherit;letter-spacing:0.06em;transition:background 0.15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.qf-submit:hover{background:#333;}
+.qf-submit:disabled{opacity:0.35;cursor:not-allowed;}
+
 /* ── Suggestion chips ── */
 .suggestions{display:flex;flex-wrap:wrap;gap:7px;padding:4px 0 2px 38px;animation:fadeIn 0.3s ease;}
 .chip{background:var(--white);border:1px solid rgba(160,120,56,0.25);border-radius:20px;padding:7px 14px;font-size:12.5px;color:var(--gold);cursor:pointer;font-family:inherit;letter-spacing:0.02em;transition:all 0.15s;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.04);}
@@ -604,41 +627,48 @@ const EDGE_URL      = `${SUPABASE_URL}/functions/v1/reno-agent`;
 const EDGE_HEADERS  = { 'Authorization': `Bearer ${SUPABASE_ANON}`, 'apikey': SUPABASE_ANON };
 
 const SYSTEM_PROMPT = `あなたはRENO.aiのAIリフォームコンサルタントです。
-エンドユーザー（施主）とフレンドリーかつプロフェッショナルにチャットし、リフォームの要望をヒアリングして、施工後のビジュアルイメージ生成を提案します。
+施主とテンポよく会話し、最短2往復でヒアリングを終えて画像生成へ進みます。
 
-## 会話の流れ
-1. 温かく挨拶し、どの部屋・スペースをリフォームしたいか聞く
-2. 現状の状態と変えたい箇所を具体的に聞く（床・壁・キッチンなど）
-3. 好みのスタイルを聞く（モダン・ナチュラル・和風・インダストリアルなど）
-4. 予算感を軽く聞く
-5. 十分な情報が集まったら画像生成を提案し、以下を出力する：
-   [GENERATE_IMAGE: {英語の画像生成プロンプト}]
+## 会話の流れ（最短2往復）
+
+### 最初の返答
+短い挨拶のあと、すぐに [QUICK_FORM] で部屋・箇所・スタイルをまとめて聞く。
+
+### 2回目の返答
+選択内容をもとに画像プロンプトを組み立て、「では写真で確認しましょう！」と [GENERATE_IMAGE:...] を出力。
+
+### 画像生成後
+結果にコメントし [SUGGESTIONS] で次のアクションを提案。
 
 ## タグのルール
-- 毎回の返答の末尾に必ず [SUGGESTIONS: 選択肢1, 選択肢2, 選択肢3] を付ける
-- 選択肢は文脈に合った3〜5個の短い日本語
-- 例（部屋を聞く場面）: [SUGGESTIONS: リビング, キッチン, 浴室・洗面所, 寝室, 玄関]
-- 例（スタイルを聞く場面）: [SUGGESTIONS: モダン, ナチュラル, 和風, インダストリアル, 北欧風]
-- 例（箇所を聞く場面）: [SUGGESTIONS: 床材, 壁紙, キッチン設備, 照明, 収納]
-- 例（予算を聞く場面）: [SUGGESTIONS: 50万円以下, 50〜100万円, 100〜200万円, 200万円以上]
-- 例（画像生成後）: [SUGGESTIONS: 別の箇所も試す, スタイルを変えてみる, 概算を見る, 提案書を作成]
-- 例（予算の話が出たとき）: [SUGGESTIONS: 概算を見る, 50万円以下, 50〜100万円, 100〜200万円, 200万円以上]
-- ユーザーが「概算を見る」「費用を知りたい」「いくらかかる」と言ったら [SHOW_SIMULATOR] を単独で出力する
-- ユーザーが特定の素材について「詳しく知りたい」「耐久性は？」「お手入れは？」と聞いたら [SHOW_MATERIAL: 素材キー] を出力する
-  素材キーの一覧: oak（オーク無垢材）, composite（複合フローリング）, tile（磁器タイル）, cushion（クッションフロア）, plaster（漆喰）, vinyl（ビニールクロス）, concrete（コンクリート）, marble（大理石調）, tatami（畳）
-- ユーザーが「事例を見る」「参考事例」「実績を見たい」と言ったら [SHOW_CASES: room, style] を出力する（room・styleは会話から推定、不明なら空白）
-- [GENERATE_IMAGE:...] または [SHOW_SIMULATOR] または [SHOW_MATERIAL:...] または [SHOW_CASES:...] がある場合は [SUGGESTIONS:...] は不要
 
-## 画像プロンプトのルール
-- 英語で記述する
-- 変更箇所を明確に、それ以外は "Keep everything else exactly the same. Photorealistic interior design." で締める
+### [QUICK_FORM: セクション定義]
+複数の選択肢をカード形式でまとめて表示。形式（セクションは :: で区切る）：
+[QUICK_FORM: 部屋|リビング,キッチン,浴室・洗面所,寝室,玄関,その他 :: 変えたい箇所|床材,壁紙,キッチン設備,照明,収納,全体的に :: スタイル|モダン,ナチュラル,和風,インダストリアル,北欧風,おまかせ]
+
+### [SUGGESTIONS: 選択肢1, 選択肢2, ...]
+シンプルなチップ選択（画像生成後などに使う）
+- 画像生成後: [SUGGESTIONS: 別の箇所も試す, 昼/夜を見る, 概算を見る, 提案書を作成]
+
+### [GENERATE_IMAGE: 英語プロンプト]
+英語で記述。変更箇所を明確に、"Keep everything else exactly the same. Photorealistic interior design." で締める。
+
+### [SHOW_SIMULATOR]
+「概算を見る」「いくらかかる」など費用の話が出たとき。
+
+### [SHOW_MATERIAL: キー]
+素材について「詳しく」「耐久性」「お手入れ」と聞かれたとき。
+キー: oak, composite, tile, cushion, plaster, vinyl, concrete, marble, tatami
+
+### [SHOW_CASES: room, style]
+「事例を見る」「参考事例」と言われたとき。
 
 ## 重要なルール
-- 常に日本語で返答する
-- 返答は短く（2〜4文程度）
-- 一度に聞く質問は1つまで
-- タグは必ず末尾に、本文とは改行で区切る
-- 親しみやすく、専門的すぎない言葉を使う`;
+- 常に日本語で返答
+- [QUICK_FORM] を使う場合は他のタグは不要
+- [GENERATE_IMAGE] がある場合は [SUGGESTIONS] は不要
+- 返答は2〜3文と短く、テンポよく
+- 親しみやすい言葉を使う`;
 
 
 // ── PIN ──
@@ -691,11 +721,8 @@ let chatStarted = false;
 function initChat() {
   chatStarted = true;
   fetchUsage();
-  addAgentMessage(
-    'こんにちは！RENO.aiへようこそ。\nどのお部屋をリフォームしたいとお考えですか？',
-    null, null,
-    ['リビング', 'キッチン', '浴室・洗面所', '寝室', '玄関']
-  );
+  addAgentMessage('こんにちは！RENO.aiへようこそ。\nご要望をまとめて教えてください👇');
+  showQuickForm('部屋|リビング,キッチン,浴室・洗面所,寝室,玄関,その他 :: 変えたい箇所|床材,壁紙,キッチン設備,照明,収納,全体的に :: スタイル|モダン,ナチュラル,和風,インダストリアル,北欧風,おまかせ');
 }
 
 function autoResize(el) {
@@ -1842,6 +1869,82 @@ function closeHistory(e) {
   if (e.target === document.getElementById('historyPanel')) closeHistoryPanel();
 }
 
+// ── Quick Form ──
+function showQuickForm(def) {
+  // Parse: "部屋|opt1,opt2 :: 箇所|opt1,opt2"
+  const sections = def.split('::').map(s => s.trim());
+  const parsed = sections.map(sec => {
+    const [label, opts] = sec.split('|');
+    return { label: label.trim(), opts: opts.split(',').map(o => o.trim()) };
+  });
+
+  const formId = 'qf-' + Date.now();
+  const state = {}; // { sectionIndex: Set of selected }
+  parsed.forEach((_, i) => state[i] = new Set());
+
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg agent';
+  div.id = formId + '-msg';
+
+  function render() {
+    const sectionsHtml = parsed.map((sec, si) => `
+      <div class="qf-section">
+        <div class="qf-label">${sec.label}</div>
+        <div class="qf-chips">
+          ${sec.opts.map(opt => `
+            <button class="qf-chip ${state[si].has(opt) ? 'selected' : ''}"
+              onclick="qfToggle('${formId}',${si},'${opt.replace(/'/g,"\\'")}')">
+              ${opt}
+            </button>`).join('')}
+        </div>
+      </div>`).join('');
+
+    const hasAll = parsed.every((_, i) => state[i].size > 0);
+    div.innerHTML = `<div class="avatar agent">${agentIcon}</div>
+      <div class="bubble agent">
+        <div class="quick-form">
+          ${sectionsHtml}
+          <button class="qf-submit" ${hasAll ? '' : 'disabled'} onclick="qfSubmit('${formId}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            ${hasAll ? 'まとめて送る' : '各項目を選んでください'}
+          </button>
+        </div>
+      </div>`;
+  }
+
+  window[formId + '_state'] = state;
+  window[formId + '_parsed'] = parsed;
+  window[formId + '_render'] = render;
+
+  render();
+  chat.appendChild(div);
+  scrollBottom();
+}
+
+window.qfToggle = function(formId, si, opt) {
+  const state = window[formId + '_state'];
+  const parsed = window[formId + '_parsed'];
+  // single select per section
+  state[si].clear();
+  state[si].add(opt);
+  window[formId + '_render']();
+  scrollBottom();
+};
+
+window.qfSubmit = function(formId) {
+  const state = window[formId + '_state'];
+  const parsed = window[formId + '_parsed'];
+  const parts = parsed.map((sec, i) => `${sec.label}：${[...state[i]].join('・')}`).join('、');
+  const text = parts;
+
+  document.getElementById(formId + '-msg')?.remove();
+  removeSuggestions();
+  addUserMessage(text);
+  history.push({ role: 'user', content: text });
+  callAgent();
+};
+
 async function sendMessage() {
   const input = document.getElementById('userInput');
   const text  = input.value.trim();
@@ -1870,11 +1973,12 @@ async function callAgent() {
     removeTyping();
 
     // Parse tags
-    const genMatch  = raw.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
-    const simMatch  = raw.match(/\[SHOW_SIMULATOR\]/);
-    const matMatch  = raw.match(/\[SHOW_MATERIAL:\s*(\w+)\]/);
+    const genMatch   = raw.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
+    const simMatch   = raw.match(/\[SHOW_SIMULATOR\]/);
+    const matMatch   = raw.match(/\[SHOW_MATERIAL:\s*(\w+)\]/);
     const casesMatch = raw.match(/\[SHOW_CASES:\s*([^,\]]*),?\s*([^\]]*)\]/);
-    const sugMatch  = raw.match(/\[SUGGESTIONS:\s*(.+?)\]/);
+    const qfMatch    = raw.match(/\[QUICK_FORM:\s*([\s\S]+?)\]/);
+    const sugMatch   = raw.match(/\[SUGGESTIONS:\s*(.+?)\]/);
     const suggestions = sugMatch
       ? sugMatch[1].split(',').map(s => s.trim()).filter(Boolean)
       : null;
@@ -1884,6 +1988,7 @@ async function callAgent() {
       .replace(/\[SHOW_SIMULATOR\]/, '')
       .replace(/\[SHOW_MATERIAL:\s*\w+\]/, '')
       .replace(/\[SHOW_CASES:[^\]]*\]/, '')
+      .replace(/\[QUICK_FORM:[\s\S]+?\]/, '')
       .replace(/\[SUGGESTIONS:.+?\]/, '')
       .trim();
 
@@ -1903,6 +2008,10 @@ async function callAgent() {
       if (display) addAgentMessage(display);
       history.push({ role:'assistant', content: raw });
       showCases(casesMatch[1].trim(), casesMatch[2].trim());
+    } else if (qfMatch) {
+      if (display) addAgentMessage(display);
+      history.push({ role:'assistant', content: raw });
+      showQuickForm(qfMatch[1].trim());
     } else {
       addAgentMessage(display, null, null, suggestions);
       history.push({ role:'assistant', content: raw });
