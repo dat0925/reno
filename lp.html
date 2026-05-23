@@ -577,17 +577,40 @@ function toggleFaq(el) {
 }
 
 // Form submit
-function submitForm() {
+async function submitForm() {
   const company = document.getElementById('f-company').value.trim();
   const name    = document.getElementById('f-name').value.trim();
   const email   = document.getElementById('f-email').value.trim();
   if (!company || !name || !email) { alert('すべての項目を入力してください'); return; }
   if (!email.includes('@')) { alert('正しいメールアドレスを入力してください'); return; }
-  // Replace with actual form submission
-  const mailto = `mailto:info@aiflag.co.jp?subject=RENO.ai 無料トライアル申込&body=会社名：${company}%0A氏名：${name}%0Aメール：${email}`;
-  window.location.href = mailto;
-  document.getElementById('formBody').style.display = 'none';
-  document.getElementById('formSuccess').style.display = 'block';
+
+  const btn = document.querySelector('.form-submit');
+  btn.disabled = true; btn.textContent = '送信中...';
+
+  try {
+    const res = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        access_key: 'd59c48bd-a30f-4ef4-8d67-c92c3638dfab',
+        subject: 'RENO.ai 無料トライアル申込',
+        from_name: 'RENO.ai LP',
+        company, name, email,
+        message: `会社名：${company}\n氏名：${name}\nメール：${email}`,
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('formBody').style.display = 'none';
+      document.getElementById('formSuccess').style.display = 'block';
+    } else {
+      throw new Error(data.message);
+    }
+  } catch(e) {
+    alert('送信に失敗しました。もう一度お試しください。');
+    btn.disabled = false;
+    btn.textContent = '14日間 無料トライアルを始める →';
+  }
 }
 </script>
 </body>
