@@ -119,6 +119,58 @@ body{background:#0c0c0c;font-family:'DM Sans','Hiragino Sans',sans-serif;color:#
 .share-btn.pdf{background:#1e1e1e;border:1px solid #2a2a2a;color:#a08060;}
 .share-btn.pdf:hover{border-color:#6a5030;color:#c8a96e;}
 
+/* ── History Panel ── */
+#historyPanel{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  z-index:300;display:none;justify-content:flex-end;
+  backdrop-filter:blur(2px);
+}
+#historyPanel.open{display:flex;}
+.history-drawer{
+  width:100%;max-width:360px;background:#0e0e0e;
+  border-left:1px solid #1e1e1e;display:flex;
+  flex-direction:column;animation:slideIn 0.25s ease;
+  height:100%;overflow:hidden;
+}
+@keyframes slideIn{from{transform:translateX(100%);}to{transform:translateX(0);}}
+.history-head{
+  padding:16px 18px;border-bottom:1px solid #161616;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.history-title{font-size:13px;color:#c8a96e;letter-spacing:0.08em;}
+.history-close{
+  background:none;border:none;color:#555;cursor:pointer;
+  font-size:18px;padding:0;line-height:1;transition:color 0.15s;
+}
+.history-close:hover{color:#aaa;}
+.history-list{flex:1;overflow-y:auto;padding:12px;}
+.history-empty{
+  text-align:center;padding:40px 20px;
+  color:#3a3a3a;font-size:13px;line-height:1.8;
+}
+.session-card{
+  background:#111;border:1px solid #1e1e1e;border-radius:10px;
+  margin-bottom:10px;overflow:hidden;transition:border-color 0.15s;
+}
+.session-card:hover{border-color:#2a2a2a;}
+.session-img{
+  width:100%;height:120px;object-fit:cover;display:block;
+  background:#0a0a0a;
+}
+.session-img-placeholder{
+  width:100%;height:80px;background:#111;
+  display:flex;align-items:center;justify-content:center;
+  color:#2a2a2a;font-size:11px;letter-spacing:0.08em;
+}
+.session-body{padding:10px 12px;}
+.session-date{font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:6px;}
+.session-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
+.session-tag{
+  background:#1a1a1a;border:1px solid #222;border-radius:4px;
+  padding:2px 8px;font-size:11px;color:#888;
+}
+.session-summary{font-size:12px;color:#686868;line-height:1.5;}
+
 /* ── PDF loading overlay ── */
 #pdfOverlay{
   position:fixed;inset:0;background:rgba(12,12,12,0.88);
@@ -292,6 +344,22 @@ body{background:#0c0c0c;font-family:'DM Sans','Hiragino Sans',sans-serif;color:#
 </head>
 <body>
 
+<!-- History Panel -->
+<div id="historyPanel" onclick="closeHistory(event)">
+  <div class="history-drawer">
+    <div class="history-head">
+      <span class="history-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:5px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        ヒアリング履歴
+      </span>
+      <button class="history-close" onclick="closeHistoryPanel()">✕</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty">読み込み中...</div>
+    </div>
+  </div>
+</div>
+
 <!-- PDF overlay -->
 <div id="pdfOverlay">
   <div class="spinner"></div>
@@ -339,6 +407,10 @@ body{background:#0c0c0c;font-family:'DM Sans','Hiragino Sans',sans-serif;color:#
     <button class="h-reset" onclick="lockApp()">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       ロック
+    </button>
+    <button class="h-reset" onclick="openHistoryPanel()" style="margin-right:0;">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      履歴
     </button>
   </div>
   <div id="chat"></div>
@@ -606,9 +678,10 @@ async function handlePhoto(event, prompt) {
     addAgentMessage(
       '施工後のイメージが完成しました！いかがでしょうか？✨',
       src, beforeURL,
-      ['別の箇所も試す', 'スタイルを変えてみる', 'もう一度生成する', 'これで進めたい']
+      ['別の箇所も試す', 'スタイルを変えてみる', '昼/夜を見る', '概算を見る', '提案書を作成']
     );
     history.push({ role:'assistant', content:'施工後のイメージが完成しました。いかがでしょうか？他の箇所も試してみますか？' });
+    autoSaveSession(src); // バックグラウンドで保存
 
   } catch(e) {
     removeTyping();
@@ -1230,6 +1303,101 @@ function simConfirm() {
   addUserMessage(text);
   history.push({ role:'user', content: text });
   callAgent();
+}
+
+// ── Session History ──
+async function autoSaveSession(afterSrc) {
+  try {
+    // Extract structured info from conversation
+    const res = await fetch(EDGE_URL, {
+      method: 'POST',
+      headers: { ...EDGE_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pin: CORRECT_PIN, type: 'chat',
+        system: `会話履歴からリフォームの要望を抽出し、以下のJSON形式のみで返してください。
+{"room":"部屋名","parts":"変更箇所","style":"希望スタイル","budget":"予算","summary":"1〜2文の要約"}`,
+        messages: [...history, { role:'user', content: '要望をJSONにまとめてください' }]
+      })
+    });
+    const data = await res.json();
+    const raw  = data.content?.[0]?.text || '{}';
+    let info = {};
+    try { const m = raw.match(/\{[\s\S]+\}/); info = m ? JSON.parse(m[0]) : {}; } catch(e) {}
+
+    // Store image URL (data URL → truncate for storage efficiency)
+    const imgToStore = afterSrc.startsWith('data:')
+      ? afterSrc.substring(0, 8000)  // thumbnail-ish
+      : afterSrc;
+
+    await fetch(EDGE_URL, {
+      method: 'POST',
+      headers: { ...EDGE_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pin: CORRECT_PIN, type: 'save_session',
+        room: info.room || '—',
+        parts: info.parts || '—',
+        style: info.style || '—',
+        budget: info.budget || '—',
+        summary: info.summary || '',
+        after_image_url: imgToStore,
+      })
+    });
+  } catch(e) {
+    console.warn('Session save failed:', e.message);
+  }
+}
+
+async function openHistoryPanel() {
+  document.getElementById('historyPanel').classList.add('open');
+  const list = document.getElementById('historyList');
+  list.innerHTML = '<div class="history-empty">読み込み中...</div>';
+
+  try {
+    const res  = await fetch(EDGE_URL, {
+      method: 'POST',
+      headers: { ...EDGE_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: CORRECT_PIN, type: 'get_sessions' })
+    });
+    const data = await res.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      list.innerHTML = '<div class="history-empty">まだ履歴がありません。<br>ヒアリングを完了すると<br>ここに保存されます。</div>';
+      return;
+    }
+
+    list.innerHTML = data.map(s => {
+      const date = new Date(s.created_at).toLocaleDateString('ja-JP', {
+        month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'
+      });
+      const imgHtml = s.after_image_url
+        ? `<img class="session-img" src="${s.after_image_url}" alt="after">`
+        : `<div class="session-img-placeholder">NO IMAGE</div>`;
+      return `<div class="session-card">
+        ${imgHtml}
+        <div class="session-body">
+          <div class="session-date">${date}</div>
+          <div class="session-tags">
+            ${s.room  ? `<span class="session-tag">${s.room}</span>` : ''}
+            ${s.parts ? `<span class="session-tag">${s.parts}</span>` : ''}
+            ${s.style ? `<span class="session-tag">${s.style}</span>` : ''}
+            ${s.budget? `<span class="session-tag">${s.budget}</span>` : ''}
+          </div>
+          ${s.summary ? `<div class="session-summary">${s.summary}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    list.innerHTML = `<div class="history-empty">読み込みに失敗しました。<br>${e.message}</div>`;
+  }
+}
+
+function closeHistoryPanel() {
+  document.getElementById('historyPanel').classList.remove('open');
+}
+
+function closeHistory(e) {
+  if (e.target === document.getElementById('historyPanel')) closeHistoryPanel();
 }
 
 async function sendMessage() {
