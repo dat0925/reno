@@ -119,6 +119,92 @@ body{background:#0c0c0c;font-family:'DM Sans','Hiragino Sans',sans-serif;color:#
 .share-btn.pdf{background:#1e1e1e;border:1px solid #2a2a2a;color:#a08060;}
 .share-btn.pdf:hover{border-color:#6a5030;color:#c8a96e;}
 
+/* ── Cases Admin Panel ── */
+#casesPanel{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  z-index:300;display:none;justify-content:flex-end;
+  backdrop-filter:blur(2px);
+}
+#casesPanel.open{display:flex;}
+.cases-drawer{
+  width:100%;max-width:400px;background:#0e0e0e;
+  border-left:1px solid #1e1e1e;display:flex;
+  flex-direction:column;height:100%;overflow:hidden;
+  animation:slideIn 0.25s ease;
+}
+.cases-head{
+  padding:14px 18px;border-bottom:1px solid #161616;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.cases-title{font-size:13px;color:#c8a96e;letter-spacing:0.08em;}
+.cases-close{background:none;border:none;color:#555;cursor:pointer;font-size:18px;padding:0;transition:color 0.15s;}
+.cases-close:hover{color:#aaa;}
+.cases-tabs{display:flex;border-bottom:1px solid #161616;flex-shrink:0;}
+.cases-tab{
+  flex:1;padding:10px;font-size:12px;color:#555;cursor:pointer;
+  font-family:inherit;background:none;border:none;
+  border-bottom:2px solid transparent;transition:all 0.15s;letter-spacing:0.04em;
+}
+.cases-tab.active{color:#c8a96e;border-bottom-color:#c8a96e;}
+.cases-body{flex:1;overflow-y:auto;padding:14px;}
+
+/* Upload form */
+.case-form-field{margin-bottom:12px;}
+.case-form-label{font-size:10px;color:#686868;letter-spacing:0.12em;text-transform:uppercase;display:block;margin-bottom:6px;}
+.case-form-input{
+  width:100%;background:#141414;border:1px solid #222;border-radius:6px;
+  color:#ede9e3;font-size:13px;padding:9px 12px;outline:none;
+  font-family:inherit;transition:border-color 0.2s;
+}
+.case-form-input:focus{border-color:#8a6a3a;}
+.case-img-upload{
+  border:1px dashed #2a2a2a;border-radius:8px;padding:20px;
+  text-align:center;cursor:pointer;transition:all 0.2s;position:relative;
+}
+.case-img-upload:hover{border-color:#6a5030;}
+.case-img-preview{width:100%;border-radius:6px;display:block;max-height:160px;object-fit:cover;}
+.case-submit{
+  width:100%;background:linear-gradient(135deg,#c8a96e,#9a7238);
+  border:none;border-radius:7px;color:#0c0c0c;font-size:13px;font-weight:500;
+  padding:11px;cursor:pointer;font-family:inherit;letter-spacing:0.06em;
+  text-transform:uppercase;transition:opacity 0.15s;margin-top:4px;
+}
+.case-submit:hover{opacity:0.88;}
+.case-submit:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* Case list */
+.case-list-item{
+  display:flex;gap:10px;background:#111;border:1px solid #1e1e1e;
+  border-radius:8px;padding:10px;margin-bottom:8px;
+  align-items:flex-start;
+}
+.case-list-img{
+  width:70px;height:56px;border-radius:5px;object-fit:cover;
+  flex-shrink:0;background:#0a0a0a;
+}
+.case-list-info{flex:1;min-width:0;}
+.case-list-title{font-size:13px;color:#d0cdc8;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.case-list-tags{display:flex;flex-wrap:wrap;gap:3px;}
+.case-list-tag{background:#1a1a1a;border:1px solid #222;border-radius:3px;padding:1px 6px;font-size:10px;color:#777;}
+.case-list-del{
+  background:none;border:none;color:#333;cursor:pointer;
+  padding:4px;transition:color 0.15s;flex-shrink:0;
+}
+.case-list-del:hover{color:#c07070;}
+
+/* Case cards in chat */
+.case-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.case-chat-card{
+  background:#1a1a1a;border:1px solid #222;border-radius:8px;overflow:hidden;
+  cursor:pointer;transition:border-color 0.15s;
+}
+.case-chat-card:hover{border-color:#6a5030;}
+.case-chat-img{width:100%;height:90px;object-fit:cover;display:block;background:#111;}
+.case-chat-body{padding:7px 9px;}
+.case-chat-title{font-size:12px;color:#d0cdc8;margin-bottom:3px;line-height:1.3;}
+.case-chat-tag{font-size:10px;color:#7a6a50;}
+.case-empty{font-size:12px;color:#555;text-align:center;padding:16px 0;}
+
 /* ── History Panel ── */
 #historyPanel{
   position:fixed;inset:0;background:rgba(0,0,0,0.6);
@@ -344,6 +430,24 @@ body{background:#0c0c0c;font-family:'DM Sans','Hiragino Sans',sans-serif;color:#
 </head>
 <body>
 
+<!-- Cases Admin Panel -->
+<div id="casesPanel" onclick="closeCasesOuter(event)">
+  <div class="cases-drawer">
+    <div class="cases-head">
+      <span class="cases-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:5px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        施工事例 管理
+      </span>
+      <button class="cases-close" onclick="closeCasesPanel()">✕</button>
+    </div>
+    <div class="cases-tabs">
+      <button class="cases-tab active" id="tab-upload" onclick="switchCasesTab('upload')">事例を登録</button>
+      <button class="cases-tab" id="tab-list" onclick="switchCasesTab('list')">登録済み一覧</button>
+    </div>
+    <div class="cases-body" id="casesBody"></div>
+  </div>
+</div>
+
 <!-- History Panel -->
 <div id="historyPanel" onclick="closeHistory(event)">
   <div class="history-drawer">
@@ -408,6 +512,10 @@ body{background:#0c0c0c;font-family:'DM Sans','Hiragino Sans',sans-serif;color:#
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       ロック
     </button>
+    <button class="h-reset" onclick="openCasesPanel()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      事例
+    </button>
     <button class="h-reset" onclick="openHistoryPanel()" style="margin-right:0;">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       履歴
@@ -453,9 +561,10 @@ const SYSTEM_PROMPT = `あなたはRENO.aiのAIリフォームコンサルタン
 - 例（画像生成後）: [SUGGESTIONS: 別の箇所も試す, スタイルを変えてみる, 概算を見る, 提案書を作成]
 - 例（予算の話が出たとき）: [SUGGESTIONS: 概算を見る, 50万円以下, 50〜100万円, 100〜200万円, 200万円以上]
 - ユーザーが「概算を見る」「費用を知りたい」「いくらかかる」と言ったら [SHOW_SIMULATOR] を単独で出力する
-- ユーザーが特定の素材（床材・壁紙・タイルなど）について「詳しく知りたい」「耐久性は？」「お手入れは？」と聞いたら [SHOW_MATERIAL: 素材キー] を出力する
+- ユーザーが特定の素材について「詳しく知りたい」「耐久性は？」「お手入れは？」と聞いたら [SHOW_MATERIAL: 素材キー] を出力する
   素材キーの一覧: oak（オーク無垢材）, composite（複合フローリング）, tile（磁器タイル）, cushion（クッションフロア）, plaster（漆喰）, vinyl（ビニールクロス）, concrete（コンクリート）, marble（大理石調）, tatami（畳）
-- [GENERATE_IMAGE:...] または [SHOW_SIMULATOR] または [SHOW_MATERIAL:...] がある場合は [SUGGESTIONS:...] は不要
+- ユーザーが「事例を見る」「参考事例」「実績を見たい」と言ったら [SHOW_CASES: room, style] を出力する（room・styleは会話から推定、不明なら空白）
+- [GENERATE_IMAGE:...] または [SHOW_SIMULATOR] または [SHOW_MATERIAL:...] または [SHOW_CASES:...] がある場合は [SUGGESTIONS:...] は不要
 
 ## 画像プロンプトのルール
 - 英語で記述する
@@ -1305,6 +1414,207 @@ function simConfirm() {
   callAgent();
 }
 
+// ── Cases Panel ──
+let casesTab = 'upload';
+let caseImgData = '';
+
+function openCasesPanel() {
+  document.getElementById('casesPanel').classList.add('open');
+  renderCasesTab();
+}
+function closeCasesPanel() {
+  document.getElementById('casesPanel').classList.remove('open');
+}
+function closeCasesOuter(e) {
+  if (e.target === document.getElementById('casesPanel')) closeCasesPanel();
+}
+function switchCasesTab(tab) {
+  casesTab = tab;
+  document.getElementById('tab-upload').classList.toggle('active', tab==='upload');
+  document.getElementById('tab-list').classList.toggle('active', tab==='list');
+  renderCasesTab();
+}
+
+function renderCasesTab() {
+  if (casesTab === 'upload') renderUploadForm();
+  else renderCasesList();
+}
+
+function renderUploadForm() {
+  document.getElementById('casesBody').innerHTML = `
+    <div class="case-form-field">
+      <label class="case-form-label">タイトル</label>
+      <input type="text" id="cf-title" class="case-form-input" placeholder="例：リビング フルリノベーション">
+    </div>
+    <div class="case-form-field">
+      <label class="case-form-label">部屋</label>
+      <input type="text" id="cf-room" class="case-form-input" placeholder="例：リビング、キッチン、浴室">
+    </div>
+    <div class="case-form-field">
+      <label class="case-form-label">スタイル</label>
+      <input type="text" id="cf-style" class="case-form-input" placeholder="例：モダン、ナチュラル、和風">
+    </div>
+    <div class="case-form-field">
+      <label class="case-form-label">予算帯</label>
+      <input type="text" id="cf-budget" class="case-form-input" placeholder="例：100〜150万円">
+    </div>
+    <div class="case-form-field">
+      <label class="case-form-label">施工のポイント</label>
+      <input type="text" id="cf-desc" class="case-form-input" placeholder="例：天井高を活かした開放的な空間に">
+    </div>
+    <div class="case-form-field">
+      <label class="case-form-label">施工写真</label>
+      <div class="case-img-upload" id="caseImgZone" onclick="document.getElementById('caseImgInput').click()">
+        <div id="caseImgPreviewWrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div style="font-size:12px;color:#555;margin-top:6px;">タップして写真を選択</div>
+        </div>
+        <input type="file" id="caseImgInput" accept="image/*" style="display:none" onchange="previewCaseImg(event)">
+      </div>
+    </div>
+    <button class="case-submit" id="caseSubmitBtn" onclick="submitCase()">事例を登録する</button>
+    <div id="caseMsg" style="font-size:12px;color:#7ab87a;text-align:center;margin-top:8px;display:none;">✓ 登録しました！</div>
+  `;
+}
+
+function previewCaseImg(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    caseImgData = ev.target.result;
+    document.getElementById('caseImgPreviewWrap').innerHTML =
+      `<img class="case-img-preview" src="${caseImgData}" alt="preview">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitCase() {
+  const title  = document.getElementById('cf-title').value.trim();
+  const room   = document.getElementById('cf-room').value.trim();
+  const style  = document.getElementById('cf-style').value.trim();
+  const budget = document.getElementById('cf-budget').value.trim();
+  const desc   = document.getElementById('cf-desc').value.trim();
+  if (!title || !room) { alert('タイトルと部屋名は必須です'); return; }
+
+  const btn = document.getElementById('caseSubmitBtn');
+  btn.disabled = true; btn.textContent = '登録中...';
+
+  try {
+    await fetch(EDGE_URL, {
+      method: 'POST',
+      headers: { ...EDGE_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pin: CORRECT_PIN, type: 'save_case',
+        title, room, style, budget_range: budget,
+        description: desc, image_data: caseImgData,
+      })
+    });
+    const msg = document.getElementById('caseMsg');
+    msg.style.display = 'block';
+    setTimeout(() => { msg.style.display = 'none'; }, 2000);
+    // Reset form
+    caseImgData = '';
+    renderUploadForm();
+  } catch(e) {
+    alert('登録に失敗しました: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function renderCasesList() {
+  document.getElementById('casesBody').innerHTML = '<div style="color:#555;font-size:13px;text-align:center;padding:20px;">読み込み中...</div>';
+  try {
+    const res  = await fetch(EDGE_URL, {
+      method: 'POST',
+      headers: { ...EDGE_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: CORRECT_PIN, type: 'get_cases', room:'', style:'' })
+    });
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      document.getElementById('casesBody').innerHTML = '<div style="color:#444;font-size:13px;text-align:center;padding:30px;">まだ事例がありません</div>';
+      return;
+    }
+    document.getElementById('casesBody').innerHTML = data.map(c => `
+      <div class="case-list-item">
+        ${c.image_data ? `<img class="case-list-img" src="${c.image_data}" alt="">` : `<div class="case-list-img" style="display:flex;align-items:center;justify-content:center;color:#2a2a2a;font-size:10px;">NO IMG</div>`}
+        <div class="case-list-info">
+          <div class="case-list-title">${c.title || '—'}</div>
+          <div class="case-list-tags">
+            ${c.room   ? `<span class="case-list-tag">${c.room}</span>` : ''}
+            ${c.style  ? `<span class="case-list-tag">${c.style}</span>` : ''}
+            ${c.budget_range ? `<span class="case-list-tag">${c.budget_range}</span>` : ''}
+          </div>
+        </div>
+        <button class="case-list-del" onclick="deleteCase('${c.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('casesBody').innerHTML = `<div style="color:#c07070;font-size:12px;text-align:center;padding:20px;">${e.message}</div>`;
+  }
+}
+
+async function deleteCase(id) {
+  if (!confirm('この事例を削除しますか？')) return;
+  await fetch(EDGE_URL, {
+    method: 'POST',
+    headers: { ...EDGE_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin: CORRECT_PIN, type: 'delete_case', id })
+  });
+  renderCasesList();
+}
+
+// ── Show Cases in chat ──
+async function showCases(room, style) {
+  const chat = document.getElementById('chat');
+  const loading = document.createElement('div');
+  loading.className = 'msg agent'; loading.id = 'cases-loading';
+  loading.innerHTML = `<div class="avatar agent">${agentIcon}</div>
+    <div class="bubble agent"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(loading); scrollBottom();
+
+  try {
+    const res  = await fetch(EDGE_URL, {
+      method: 'POST',
+      headers: { ...EDGE_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: CORRECT_PIN, type: 'get_cases', room, style })
+    });
+    const data = await res.json();
+    document.getElementById('cases-loading')?.remove();
+
+    const div = document.createElement('div');
+    div.className = 'msg agent';
+
+    if (!Array.isArray(data) || data.length === 0) {
+      div.innerHTML = `<div class="avatar agent">${agentIcon}</div>
+        <div class="bubble agent">まだ施工事例が登録されていません。<br>担当者に直接お問い合わせください。</div>`;
+    } else {
+      const cards = data.map(c => `
+        <div class="case-chat-card">
+          ${c.image_data ? `<img class="case-chat-img" src="${c.image_data}" alt="">` : `<div class="case-chat-img" style="display:flex;align-items:center;justify-content:center;color:#333;font-size:10px;">NO IMAGE</div>`}
+          <div class="case-chat-body">
+            <div class="case-chat-title">${c.title || '施工事例'}</div>
+            <div class="case-chat-tag">${[c.room, c.style, c.budget_range].filter(Boolean).join(' · ')}</div>
+          </div>
+        </div>`).join('');
+
+      div.innerHTML = `<div class="avatar agent">${agentIcon}</div>
+        <div class="bubble agent">
+          ${room || style ? `${[room,style].filter(Boolean).join('・')}の施工事例です。` : '施工事例の一覧です。'}参考にしてみてください！
+          <div class="case-cards">${cards}</div>
+        </div>`;
+    }
+    chat.appendChild(div);
+    renderSuggestions(['画像で確認する', '概算を見る', 'このスタイルで進めたい', '提案書を作成']);
+    scrollBottom();
+  } catch(e) {
+    document.getElementById('cases-loading')?.remove();
+    addAgentMessage(`事例の取得に失敗しました: ${e.message}`);
+  }
+}
+
 // ── Session History ──
 async function autoSaveSession(afterSrc) {
   try {
@@ -1431,6 +1741,7 @@ async function callAgent() {
     const genMatch  = raw.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
     const simMatch  = raw.match(/\[SHOW_SIMULATOR\]/);
     const matMatch  = raw.match(/\[SHOW_MATERIAL:\s*(\w+)\]/);
+    const casesMatch = raw.match(/\[SHOW_CASES:\s*([^,\]]*),?\s*([^\]]*)\]/);
     const sugMatch  = raw.match(/\[SUGGESTIONS:\s*(.+?)\]/);
     const suggestions = sugMatch
       ? sugMatch[1].split(',').map(s => s.trim()).filter(Boolean)
@@ -1440,6 +1751,7 @@ async function callAgent() {
       .replace(/\[GENERATE_IMAGE:[\s\S]+?\]/, '')
       .replace(/\[SHOW_SIMULATOR\]/, '')
       .replace(/\[SHOW_MATERIAL:\s*\w+\]/, '')
+      .replace(/\[SHOW_CASES:[^\]]*\]/, '')
       .replace(/\[SUGGESTIONS:.+?\]/, '')
       .trim();
 
@@ -1455,6 +1767,10 @@ async function callAgent() {
       if (display) addAgentMessage(display);
       history.push({ role:'assistant', content: raw });
       showMaterial(matMatch[1].trim());
+    } else if (casesMatch) {
+      if (display) addAgentMessage(display);
+      history.push({ role:'assistant', content: raw });
+      showCases(casesMatch[1].trim(), casesMatch[2].trim());
     } else {
       addAgentMessage(display, null, null, suggestions);
       history.push({ role:'assistant', content: raw });
