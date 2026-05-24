@@ -25,8 +25,8 @@
   --green:#4a9a5a;--red:#c05040;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;}
-body{background:var(--bg);font-family:'DM Sans','Hiragino Sans',sans-serif;color:var(--text);display:flex;flex-direction:column;height:100vh;}
+html,body{height:100%;overflow:hidden;}html{height:-webkit-fill-available;}
+body{background:var(--bg);font-family:'DM Sans','Hiragino Sans',sans-serif;color:var(--text);display:flex;flex-direction:column;height:100vh;height:100dvh;min-height:-webkit-fill-available;}
 ::placeholder{color:var(--muted);}
 ::-webkit-scrollbar{width:3px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
@@ -541,7 +541,7 @@ body{background:var(--bg);font-family:'DM Sans','Hiragino Sans',sans-serif;color
 .sim-confirm{width:100%;margin-top:10px;background:var(--text);border:none;border-radius:7px;color:var(--white);font-size:12px;font-weight:500;padding:10px;cursor:pointer;font-family:inherit;letter-spacing:0.06em;text-transform:uppercase;transition:background 0.15s;}
 .sim-confirm:hover{background:#333;}
 
-#app{display:none;flex:1;flex-direction:column;height:100vh;overflow:hidden;}
+#app{display:none;flex:1;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
 </style>
 </head>
 <body>
@@ -1038,6 +1038,15 @@ function initIconPicker() {
 
     sel.appendChild(card);
   });
+}
+
+// ── Safari viewport fix ──
+if (window.visualViewport) {
+  const setVh = () => {
+    document.documentElement.style.setProperty('--vh', `${window.visualViewport.height * 0.01}px`);
+  };
+  window.visualViewport.addEventListener('resize', setVh);
+  setVh();
 }
 
 // ── PIN & Token Auth ──
@@ -2022,6 +2031,10 @@ async function fetchUsage() {
 function renderUsageBadge() {
   const el = document.getElementById('usageBadge');
   if (!el) return;
+  if (DEMO_BYPASS_LIMIT) {
+    el.innerHTML = '<span style="color:var(--gold);font-size:11px;">✦ Demo</span>';
+    return;
+  }
   const { plan, count, limit } = currentUsage;
   if (plan === 'pro') { el.innerHTML = '<span style="color:#7ab87a;font-size:11px;">✦ Pro</span>'; return; }
   const pips = Array.from({ length: limit > 10 ? 10 : limit }, (_, i) => {
