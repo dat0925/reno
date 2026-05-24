@@ -1517,7 +1517,7 @@ async function useSampleImage(idx, prompt) {
     autoSaveSession(src);
   } catch(e) {
     removeTyping();
-    addAgentMessage('申し訳ありません、エラーが発生しました。\n' + e.message);
+    addAgentMessage('現在AIイメージ生成をご利用いただけません。しばらく経ってから再度お試しください。');
   }
 }
 
@@ -1629,8 +1629,37 @@ async function generateWithFiles(beforeFile, idealFile) {
 
   } catch(e) {
     removeTyping();
-    addAgentMessage(`申し訳ありません、エラーが発生しました。\n${e.message}`);
+    // フォールバック：サンプル画像でビフォーアフターを表示
+    const fallbackSrc = await getFallbackImage(window._genPrompt || '');
+    if (fallbackSrc) {
+      addAgentMessage(
+        '現在AIイメージ生成をご利用いただけません。参考イメージをご覧ください。',
+        fallbackSrc, beforeURL,
+        ['別の箇所も試す', 'スタイルを変えてみる', '昼/夜を見る', '概算を見る', '提案書を作成']
+      );
+    } else {
+      addAgentMessage('現在AIイメージ生成をご利用いただけません。しばらく経ってから再度お試しください。');
+    }
   }
+}
+
+// エラー時フォールバック画像取得
+async function getFallbackImage(prompt) {
+  try {
+    // プロンプトから部屋タイプを推定してサンプルを選択
+    const p = prompt.toLowerCase();
+    let sample;
+    if (p.includes('kitchen') || p.includes('キッチン')) sample = SAMPLE_IMAGES.find(s => s.label === 'キッチン');
+    else if (p.includes('bathroom') || p.includes('浴室')) sample = SAMPLE_IMAGES.find(s => s.label === '浴室');
+    else if (p.includes('washroom') || p.includes('洗面')) sample = SAMPLE_IMAGES.find(s => s.label === '洗面所');
+    else if (p.includes('bedroom') || p.includes('寝室') || p.includes('子供')) sample = SAMPLE_IMAGES.find(s => s.label === '子供部屋');
+    else if (p.includes('washitsu') || p.includes('和室')) sample = SAMPLE_IMAGES.find(s => s.label === '和室');
+    else sample = SAMPLE_IMAGES[0]; // デフォルトはリビング
+    if (!sample) return null;
+    const res = await fetch(sample.src);
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch(e) { return null; }
 }
 
 // ── Share functions ──
@@ -1877,7 +1906,7 @@ async function generateNight(btn, afterSrc, beforeSrc) {
 
   } catch(e) {
     document.getElementById('dn-card')?.remove();
-    addAgentMessage(`夜のイメージ生成に失敗しました。\n${e.message}`);
+    addAgentMessage('現在夜間イメージ生成をご利用いただけません。しばらく経ってから再度お試しください。');
   } finally {
     btn.disabled = false;
     btn.style.opacity = '';
@@ -2063,7 +2092,7 @@ async function generatePDF(afterSrc, beforeSrc) {
     doc.save(`RENO-ai-提案書-${Date.now()}.pdf`);
 
   } catch(e) {
-    alert('PDF生成に失敗しました: ' + e.message);
+    addAgentMessage('現在提案書の生成をご利用いただけません。しばらく経ってから再度お試しください。');
   } finally {
     overlay.style.display = 'none';
     const tmpl = document.getElementById('pdfTemplate');
@@ -2634,7 +2663,7 @@ async function showCases(room, style) {
     scrollBottom();
   } catch(e) {
     document.getElementById('cases-loading')?.remove();
-    addAgentMessage(`事例の取得に失敗しました: ${e.message}`);
+    addAgentMessage('事例の読み込みに時間がかかっています。もう一度お試しください。');
   }
 }
 
@@ -2884,7 +2913,7 @@ async function callAgent() {
 
   } catch(e) {
     removeTyping();
-    addAgentMessage(`エラーが発生しました: ${e.message}`);
+    addAgentMessage('一時的にご利用いただけません。しばらく経ってから再度お試しください。');
   }
   document.getElementById('sendBtn').disabled = false;
 }
