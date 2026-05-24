@@ -1245,17 +1245,16 @@ async function checkPin() {
       const app = document.getElementById('app');
       app.style.display = 'flex';
       if (!chatStarted) initChat();
+      pinChecking = false;
     } else {
       renderDots('error');
       setTimeout(() => { pinValue = ''; renderDots(); pinChecking = false; }, 800);
-      return;
     }
   } catch(e) {
+    // ネットワークエラー時もリセット
     renderDots('error');
     setTimeout(() => { pinValue = ''; renderDots(); pinChecking = false; }, 800);
-    return;
   }
-  pinChecking = false;
 }
 
 function lockApp() {
