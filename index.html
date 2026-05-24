@@ -1034,6 +1034,10 @@ function initIconPicker() {
       playSound('chip');
       sel.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
+      // 既存メッセージのアバターを全部即反映
+      document.querySelectorAll('.avatar.agent img').forEach(img => {
+        img.src = getAgentIconHTML().match(/src="([^"]+)"/)?.[1] || '';
+      });
     };
 
     sel.appendChild(card);
