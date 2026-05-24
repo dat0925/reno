@@ -1521,48 +1521,24 @@ async function useSampleImage(idx, prompt) {
   const beforeURL = sample.src;
   const card = document.getElementById('upload-msg');
   if (card) card.remove();
-  addUserMessage('\uD83D\uDCF7 サンプル画像（' + sample.label + '）を選択しました');
-  addTyping();
+  addUserMessage('📷 サンプル画像（' + sample.label + '）を選択しました');
+
+  // サンプル画像をFileオブジェクトに変換してからglobalに保持
   try {
     const res0 = await fetch(sample.src);
     const blob = await res0.blob();
     const file = new File([blob], 'sample.jpg', { type: 'image/jpeg' });
-    const form = new FormData();
-    form.append('token', sessionToken);
-    form.append('prompt', prompt);
-    form.append('image', file, file.name);
-    const apiRes = await fetch(EDGE_URL, { method:'POST', headers: EDGE_HEADERS, body: form });
-    const data = await apiRes.json();
-    if (apiRes.status === 429 && data.error === 'limit_exceeded' && !DEMO_BYPASS_LIMIT) {
-      removeTyping(); showUpgradeModal();
-      addAgentMessage('今月の生成回数に達しました。プランのアップグレードをご検討ください。');
-      return;
-    }
-    if (!apiRes.ok) throw new Error(data.error?.message || '生成に失敗しました');
-    const img = data.data?.[0];
-    const src = img?.url || (img?.b64_json ? 'data:image/png;base64,' + img.b64_json : null);
-    if (!src) throw new Error('画像の取得に失敗しました');
-    if (data._usage) updateUsageAfterGen(data._usage);
-    removeTyping();
-    addAgentMessage('施工後のイメージが完成しました！いかがでしょうか？✨', src, beforeURL,
-      ['別の箇所も試す', 'スタイルを変えてみる', '昼/夜を見る', '概算を見る', '提案書を作成']);
-    history.push({ role:'assistant', content:'施工後のイメージが完成しました。いかがでしょうか？' });
-    autoSaveSession(src);
+    window._beforeFile = file;
+    window._beforeURL = beforeURL;
+    window._genPrompt = prompt;
   } catch(e) {
-    removeTyping();
-    try {
-      const res = await fetch('/samples/after_living.jpg');
-      const blob = await res.blob();
-      const fallbackSrc = URL.createObjectURL(blob);
-      addAgentMessage(
-        '現在AIイメージ生成をご利用いただけません。参考イメージをご覧ください。',
-        fallbackSrc, beforeURL,
-        ['別の箇所も試す', 'スタイルを変えてみる', '昼/夜を見る', '概算を見る', '提案書を作成']
-      );
-    } catch(e2) {
-      addAgentMessage('現在AIイメージ生成をご利用いただけません。しばらく経ってから再度お試しください。');
-    }
+    window._beforeFile = null;
+    window._beforeURL = beforeURL;
+    window._genPrompt = prompt;
   }
+
+  // 理想イメージカードを表示（handlePhotoと同じフロー）
+  showIdealImageCard(window._beforeFile, beforeURL, prompt);
 }
 async function handlePhoto(event, prompt) {
   const file = event.target.files[0];
