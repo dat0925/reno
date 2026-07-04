@@ -1367,8 +1367,8 @@ function applySession(data) {
     document.getElementById('userAvatarImg').src = sessionAvatar || '';
     document.getElementById('userMenuEmail').textContent = sessionEmail || '';
   }
-  if (location.search) history.replaceState(null, '', location.pathname);
   if (!chatStarted) initChat();
+  if (location.search) { try { history.replaceState(null, '', location.pathname); } catch (e) {} }
 }
 
 function toggleUserMenu() {
@@ -1480,7 +1480,7 @@ function lockApp() {
   const userMenu = document.getElementById('userMenu');
   if (userMenu) userMenu.style.display = 'none';
   // URLに?pinが残っているとリロード時に再度ゲスト扱いになるので消しておく
-  if (location.search) history.replaceState(null, '', location.pathname);
+  if (location.search) { try { history.replaceState(null, '', location.pathname); } catch (e) {} }
   supabaseAuth.auth.signOut().catch(() => {});
 }
 
