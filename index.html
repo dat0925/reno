@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<script>
+// Google認証から戻ってきた直後かどうかを最速で判定し、ログイン画面のちらつきを防ぐ
+if (location.hash.indexOf('access_token') !== -1 || new URLSearchParams(location.search).has('code')) {
+  document.documentElement.classList.add('oauth-pending');
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>RENO</title>
@@ -40,7 +46,11 @@ body{background:var(--bg);font-family:'DM Sans','Hiragino Sans',sans-serif;color
   z-index:600;padding:24px;
   padding-top:max(24px, env(safe-area-inset-top));
 }
-.pin-card{width:100%;max-width:320px;text-align:center;}
+.pin-card{width:100%;max-width:320px;text-align:center;position:relative;}
+#oauthLoadingOverlay{display:none;position:absolute;inset:-24px;background:linear-gradient(160deg,var(--white) 0%,var(--gold-bg) 100%);z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:14px;border-radius:8px;}
+html.oauth-pending #oauthLoadingOverlay{display:flex;}
+.oauth-spinner{width:28px;height:28px;border-radius:50%;border:2.5px solid var(--border);border-top-color:var(--gold);animation:oauthSpin 0.8s linear infinite;}
+@keyframes oauthSpin{to{transform:rotate(360deg);}}
 .pin-logo{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;letter-spacing:0.14em;margin-bottom:4px;color:var(--text);}
 .pin-logo-badge{display:inline-block;font-size:9px;color:var(--gold);letter-spacing:0.22em;text-transform:uppercase;border:1px solid rgba(160,120,56,0.3);padding:2px 7px;border-radius:3px;margin-left:8px;vertical-align:middle;}
 .pin-divider{height:1px;background:linear-gradient(to right,transparent,var(--border),transparent);margin:28px 0;}
@@ -575,11 +585,12 @@ body{background:var(--bg);font-family:'DM Sans','Hiragino Sans',sans-serif;color
 #app{display:none;flex:1;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
 /* PC対応：1024px以上でセンタリング（iPadは全幅のまま） */
 @media(min-width:1024px){
-  #app{max-width:720px;margin:0 auto;box-shadow:0 0 40px rgba(0,0,0,0.08);position:relative;}
+  #app{width:720px;max-width:720px;margin:0 auto;box-shadow:0 0 40px rgba(0,0,0,0.08);position:relative;}
   #pinScreen .pin-card{max-width:360px;}
   #menuSheet{align-items:flex-end;justify-content:center;}
   .menu-drawer{max-width:720px;border-radius:16px 16px 0 0;}
 }
+#chat{scrollbar-gutter:stable;}
 </style>
 </head>
 <body>
@@ -856,6 +867,10 @@ body{background:var(--bg);font-family:'DM Sans','Hiragino Sans',sans-serif;color
 <!-- PIN Screen -->
 <div id="pinScreen">
   <div class="pin-card">
+    <div id="oauthLoadingOverlay">
+      <div class="oauth-spinner"></div>
+      <div style="font-size:11.5px;color:var(--muted);letter-spacing:0.06em;">ログイン確認中...</div>
+    </div>
     <div class="pin-logo"><img src="data:image/jpeg;base64,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" alt="RENO.ai" style="width:44px;height:46px;margin-bottom:6px;display:block;margin-left:auto;margin-right:auto;"><br>RENO<span class="pin-logo-badge">AI Agent</span></div>
     <div class="pin-divider"></div>
 
@@ -1422,7 +1437,10 @@ async function handleGoogleRedirect() {
   const statusEl = document.getElementById('googleLoginStatus');
   try {
     const { data: { session } } = await supabaseAuth.auth.getSession();
-    if (!session) return;
+    if (!session) {
+      document.documentElement.classList.remove('oauth-pending');
+      return;
+    }
     sessionAvatar = session.user?.user_metadata?.avatar_url || session.user?.user_metadata?.picture || '';
     if (statusEl) statusEl.textContent = 'ログイン中...';
     const res = await fetch(EDGE_URL, {
@@ -1439,6 +1457,8 @@ async function handleGoogleRedirect() {
     }
   } catch (e) {
     if (statusEl) statusEl.textContent = 'ログインに失敗しました。';
+  } finally {
+    document.documentElement.classList.remove('oauth-pending');
   }
 }
 
