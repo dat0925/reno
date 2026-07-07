@@ -3130,7 +3130,14 @@ async function callAgent() {
     if (genMatch) {
       if (display) addAgentMessage(display);
       history.push({ role:'assistant', content: raw });
-      showUploadCard(genMatch[1].trim());
+      if (window._beforeFile || window._beforeURL) {
+        // 既に写真がある場合は再アップロードさせず、その写真のまま再生成する
+        window._genPrompt = genMatch[1].trim();
+        generateWithFiles(window._beforeFile, null);
+      } else {
+        // 初回のみ写真アップロードを求める
+        showUploadCard(genMatch[1].trim());
+      }
     } else if (simMatch) {
       if (display) addAgentMessage(display);
       history.push({ role:'assistant', content: raw });
